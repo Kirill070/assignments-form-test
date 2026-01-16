@@ -8,7 +8,7 @@ class RegistrationFormTest extends TestCase
 {
     public function test_form_page_renders_with_required_fields(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/users/create');
 
         $response->assertStatus(200);
         $response->assertSee('name="first_name"', false);
@@ -23,12 +23,12 @@ class RegistrationFormTest extends TestCase
         $payload = [
             'first_name' => 'Ivan',
             'last_name' => 'Petrov',
-            'email' => 'ivan.petrov@example.test',
+            'email' => 'new.user@example.test',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
         ];
 
-        $response = $this->postJson('/api/register', $payload);
+        $response = $this->postJson('/users', $payload);
 
         $response->assertStatus(200);
         $response->assertJson([
