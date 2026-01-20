@@ -15,41 +15,58 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $firstName = trim((string) $request->input('first_name'));
+        $lastName = trim((string) $request->input('last_name'));
         $email = trim((string) $request->input('email'));
         $password = (string) $request->input('password');
         $passwordConfirmation = (string) $request->input('password_confirmation');
 
-        if ($email === '' || !str_contains($email, '@')) {
+        if ($firstName === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'First name is required.',
+            ]);
+        }
+
+        if ($lastName === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Last name is required.',
+            ]);
+        }
+
+        if ($email === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email is required.',
+            ]);
+        }
+
+        if (!str_contains($email, '@')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Email must contain "@".',
             ]);
         }
 
-        if ($password === '' || $password !== $passwordConfirmation) {
+        if ($password === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password is required.',
+            ]);
+        }
+
+        if ($password !== $passwordConfirmation) {
             return response()->json([
                 'success' => false,
                 'message' => 'Passwords do not match.',
             ]);
         }
 
-        $existingUsers = [
-            ['id' => 1, 'name' => 'Ivan Petrov', 'email' => 'ivan.petrov@example.test'],
-            ['id' => 2, 'name' => 'Maria Ivanova', 'email' => 'maria.ivanova@example.test'],
-            ['id' => 3, 'name' => 'Sergey Smirnov', 'email' => 'sergey.smirnov@example.test'],
-        ];
-
-        $exists = collect($existingUsers)->contains(function (array $user) use ($email) {
-            return $user['email'] === $email;
-        });
+        $exists = User::where('email', $email)->exists();
 
         $status = $exists ? 'duplicate' : 'registered';
-        $line = sprintf(
-            "[%s] email=%s status=%s\n",
-            now()->toDateTimeString(),
-            $email,
-            $status
-        );
+        $line = sprintf('email=%s status=%s' . "\n", $email, $status);
 
         file_put_contents(storage_path('logs/registration.log'), $line, FILE_APPEND);
 
@@ -61,8 +78,8 @@ class UserController extends Controller
         }
 
         User::create([
-            'first_name' => trim((string) $request->input('first_name')),
-            'last_name' => trim((string) $request->input('last_name')),
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'email' => $email,
             'password' => Hash::make($password),
         ]);

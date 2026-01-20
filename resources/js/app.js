@@ -24,8 +24,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(form);
         const payload = Object.fromEntries(formData.entries());
 
-        if (!payload.email || !payload.email.includes('@')) {
+        if (!payload.first_name) {
+            showError('First name is required.');
+            return;
+        }
+
+        if (!payload.last_name) {
+            showError('Last name is required.');
+            return;
+        }
+
+        if (!payload.email) {
+            showError('Email is required.');
+            return;
+        }
+
+        if (!payload.email.includes('@')) {
             showError('Email must contain "@".');
+            return;
+        }
+
+        if (!payload.password) {
+            showError('Password is required.');
             return;
         }
 
