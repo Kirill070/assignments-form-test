@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
@@ -15,53 +16,41 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $firstName = trim((string) $request->input('first_name'));
-        $lastName = trim((string) $request->input('last_name'));
-        $email = trim((string) $request->input('email'));
-        $password = (string) $request->input('password');
-        $passwordConfirmation = (string) $request->input('password_confirmation');
+        $respond = static fn (bool $success, string $message) => response()->json([
+            'success' => $success,
+            'message' => $message,
+        ]);
 
-        if ($firstName === '') {
-            return response()->json([
-                'success' => false,
-                'message' => 'First name is required.',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'string',
+                'max:255',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (!str_contains((string) $value, '@')) {
+                        $fail('Email must contain "@".');
+                    }
+                },
+            ],
+            'password' => ['required', 'string'],
+            'password_confirmation' => ['required', 'string', 'same:password'],
+        ], [
+            'first_name.required' => 'First name is required.',
+            'last_name.required' => 'Last name is required.',
+            'email.required' => 'Email is required.',
+            'password.required' => 'Password is required.',
+            'password_confirmation.required' => 'Password confirmation is required.',
+            'password_confirmation.same' => 'Passwords do not match.',
+        ]);
+
+        if ($validator->fails()) {
+            return $respond(false, $validator->errors()->first());
         }
 
-        if ($lastName === '') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Last name is required.',
-            ]);
-        }
-
-        if ($email === '') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Email is required.',
-            ]);
-        }
-
-        if (!str_contains($email, '@')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Email must contain "@".',
-            ]);
-        }
-
-        if ($password === '') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Password is required.',
-            ]);
-        }
-
-        if ($password !== $passwordConfirmation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Passwords do not match.',
-            ]);
-        }
+        $data = $validator->validated();
+        $email = trim($data['email']);
 
         $exists = User::where('email', $email)->exists();
 
@@ -73,23 +62,17 @@ class UserController extends Controller
         }
 
         if ($exists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User with this email already exists.',
-            ]);
+            return $respond(false, 'User with this email already exists.');
         }
 
         User::create([
-            'first_name' => $firstName,
-            'last_name' => $lastName,
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
             'email' => $email,
-            'password' => Hash::make($password),
+            'password' => Hash::make($data['password']),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Registration successful.',
-        ]);
+        return $respond(true, 'Registration successful.');
     }
 
     public function index()

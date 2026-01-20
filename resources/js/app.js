@@ -24,34 +24,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(form);
         const payload = Object.fromEntries(formData.entries());
 
-        if (!payload.first_name) {
-            showError('First name is required.');
-            return;
-        }
+        const validations = [
+            [!payload.first_name, 'First name is required.'],
+            [!payload.last_name, 'Last name is required.'],
+            [!payload.email, 'Email is required.'],
+            [payload.email && !payload.email.includes('@'), 'Email must contain "@".'],
+            [!payload.password, 'Password is required.'],
+            [payload.password !== payload.password_confirmation, 'Passwords do not match.'],
+        ];
 
-        if (!payload.last_name) {
-            showError('Last name is required.');
-            return;
-        }
-
-        if (!payload.email) {
-            showError('Email is required.');
-            return;
-        }
-
-        if (!payload.email.includes('@')) {
-            showError('Email must contain "@".');
-            return;
-        }
-
-        if (!payload.password) {
-            showError('Password is required.');
-            return;
-        }
-
-        if (payload.password !== payload.password_confirmation) {
-            showError('Passwords do not match.');
-            return;
+        for (const [hasError, message] of validations) {
+            if (hasError) {
+                showError(message);
+                return;
+            }
         }
 
         submitButton.disabled = true;
@@ -64,8 +50,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     'X-CSRF-TOKEN': csrfToken || '',
                     'Accept': 'application/json',
                 },
+                credentials: 'same-origin',
                 body: formData,
             });
+
+            if (response.status === 419) {
+                showError('Session expired. Refresh the page and try again.');
+                return;
+            }
 
             const data = await response.json().catch(() => null);
 
