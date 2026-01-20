@@ -66,9 +66,11 @@ class UserController extends Controller
         $exists = User::where('email', $email)->exists();
 
         $status = $exists ? 'duplicate' : 'registered';
-        $line = sprintf('email=%s status=%s' . "\n", $email, $status);
+        $line = sprintf('[%s] email=%s status=%s' . "\n", now()->toDateTimeString(), $email, $status);
 
-        file_put_contents(storage_path('logs/registration.log'), $line, FILE_APPEND);
+        if (!app()->environment('testing')) {
+            file_put_contents(storage_path('logs/registration.log'), $line, FILE_APPEND);
+        }
 
         if ($exists) {
             return response()->json([

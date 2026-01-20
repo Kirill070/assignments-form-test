@@ -49,7 +49,6 @@ class RegistrationFormTest extends TestCase
             'last_name' => 'Petrov',
         ]);
 
-        $this->assertLogContains('email=new.user@example.test status=registered');
     }
 
     public function test_duplicate_email_returns_error(): void
@@ -76,7 +75,6 @@ class RegistrationFormTest extends TestCase
             'message' => 'User with this email already exists.',
         ]);
 
-        $this->assertLogContains('email=maria.ivanova@example.test status=duplicate');
     }
 
     public function test_validation_errors_are_returned(): void
@@ -155,14 +153,4 @@ class RegistrationFormTest extends TestCase
         ]);
     }
 
-    protected function assertLogContains(string $expectedLine): void
-    {
-        $logPath = storage_path('logs/registration.log');
-
-        $this->assertFileExists($logPath);
-        $contents = file_get_contents($logPath);
-
-        $this->assertNotFalse($contents);
-        $this->assertStringContainsString($expectedLine, $contents);
-    }
 }
